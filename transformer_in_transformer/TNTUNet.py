@@ -195,10 +195,6 @@ class TNT(nn.Module):
 
         self.layers = layers
 
-        # self.mlp_head = nn.Sequential(
-        #     nn.LayerNorm(patch_dim),
-        #     nn.Linear(patch_dim, num_classes)
-        # )
 
     def forward(self, x):
         b, _, h, w, patch_size, image_size = *x.shape, self.patch_size, self.image_size
@@ -207,8 +203,13 @@ class TNT(nn.Module):
         num_patches_h = h // patch_size
         num_patches_w = w // patch_size
         n = num_patches_w * num_patches_h
+        # print("num_patches_w: ", num_patches_w)
+        # print("num_patches_h: ", num_patches_h)
 
+        # print("x: ", x.shape)
         pixels = self.to_pixel_tokens(x)
+        # print("pixels: ", pixels.shape)
+
         patches = repeat(self.patch_tokens[:(n + 1)], 'n d -> b n d', b = b)
         # print("patches:", patches.shape)
 
@@ -226,7 +227,7 @@ class TNT(nn.Module):
 
             patches_residual = rearrange(patches_residual, '(b h w) d -> b (h w) d', h = num_patches_h, w = num_patches_w)
             patches_residual = F.pad(patches_residual, (0, 0, 1, 0), value = 0) # cls token gets residual of 0
-            # print("patches_residual: ", patches_residuals)
+            # print("patches_residual: ", patches_residual.shape)
             patches = patches + patches_residual
 
             patches = patch_attn(patches) + patches
@@ -260,9 +261,7 @@ class MLP(nn.Sequential):
 class TNTUNet(nn.Module):
     def __init__(
         self,
-        image_size_1 = 256,
-        image_size_2 = 64,
-        image_size_3 = 16,
+        image_size = 256,
         patch_size = 4,
         pixel_feature_dim=512,
         class_num = 100
@@ -270,20 +269,20 @@ class TNTUNet(nn.Module):
         super().__init__()
 
         self.tnt_4_first = TNT(
-            image_size = image_size_1,       # size of image
+            image_size = image_size,       # size of image
             patch_dim = 512,        # dimension of patch token
             pixel_dim = 24,         # dimension of pixel token
             patch_size = patch_size,        # patch size
             pixel_size = 2,         # pixel size
             depth = 2,              # depth
-            pixel_feature_dim=3,
+            pixel_feature_dim=4,
             attn_dropout = 0.1,     # attention dropout
             ff_dropout = 0.1        # feedforward dropout
         )
 
 
         self.tnt_4_second = TNT(
-            image_size = image_size_2,       # size of image
+            image_size = int(image_size/patch_size),       # size of image
             patch_dim = 512,        # dimension of patch token
             pixel_dim = 24,         # dimension of pixel token
             patch_size = patch_size,        # patch size
@@ -295,7 +294,7 @@ class TNTUNet(nn.Module):
         )
 
         self.tnt_4_third = TNT(
-            image_size = image_size_3,       # size of image
+            image_size = int(image_size/(patch_size)**2),       # size of image
             patch_dim = 512,        # dimension of patch token
             pixel_dim = 24,         # dimension of pixel token
             patch_size = patch_size,        # patch size
@@ -314,7 +313,7 @@ class TNTUNet(nn.Module):
         )
 
         self.decoder = Decoder(
-            upsampler_scale_factor = 4
+            upsampler_scale_factor=4
         )
 
         self.upsampler = Upsampler(
@@ -352,5 +351,5 @@ class TNTUNet(nn.Module):
         # print(output_decoder_3.shape)
         # print('segmentation layer 3 ...')
         final_output = self.segmentation(output_decoder_3)
-        # print(final.shape)
+        # print(final_output.shape)
         return final_output

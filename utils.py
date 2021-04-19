@@ -71,7 +71,8 @@ class DiceLoss(nn.Module):
     def forward(self, inputs, target, weight=None, softmax=False):
         if softmax:
             inputs = torch.softmax(inputs, dim=1)
-        target = self._one_hot_encoder(target)
+        # print("target size: ", target.size())
+        # target = self._one_hot_encoder(target)
         if weight is None:
             weight = [1] * self.n_classes
         assert inputs.size() == target.size(), 'predict {} & target {} shape do not match'.format(inputs.size(), target.size())
