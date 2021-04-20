@@ -17,5 +17,5 @@ class Option():
         self.parser.add_argument("--deterministic", type=int, default=1, help="whether use deterministic training")
         self.parser.add_argument("--seed", type=int, default=42, help="random seed for cuda")
         self.parser.add_argument("--save_interval", type=int, default=50, help="the model weights saving interval")
-        self.parser.add_argument("--model_path", type=str, default="", help="the path of saving weights and logs")
+        self.parser.add_argument("--model_path", type=str, default="/home/han/Documents/han/TNTUNet/model/", help="the path of saving weights and logs")
         self.opt = self.parser.parse_args()

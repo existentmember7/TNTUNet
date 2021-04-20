@@ -4,7 +4,7 @@ import random
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-from transformer_in_transformer.TNTUNet import TNTUNet
+from networks.TNTUNet import TNTUNet
 from trainer import Trainer
 from option.option import Option
 
