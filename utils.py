@@ -43,6 +43,21 @@ def mask2label(path, label_number):
         img[img > 0] = label_number
         cv2.imwrite(path+"label/"+filename+".png", img)
 
+def crop2split_data(path):
+    folders = ['color', 'depth', 'label', 'mask']
+    for folder in folders:
+        for file in glob.glob(path+folder+'/*.png'):
+            crop_and_split(file, (720, 720), path[:-1]+"_v2/"+folder+"/")
+
+def crop_and_split(img_path, size, save_path):
+    filename = img_path.split('/')[-1].split('.')[0]
+    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+    img1 = img[:size[0], :size[1]]
+    img2 = img[:size[0], img.shape[1]-size[1]:]
+    cv2.imwrite(save_path+filename+'_l.png', img1)
+    cv2.imwrite(save_path+filename+'_r.png', img2)
+
+
 
 def get_depth(img_path, img_shape):
     img = cv2.resize(cv2.imread(img_path), img_shape, interpolation = cv2.INTER_AREA)
@@ -52,7 +67,8 @@ def get_depth(img_path, img_shape):
 
 ## end
 
-mask2label('/Users/hanwei/Desktop/TNTUNet/datasets/train/', 1)
+# mask2label('/Users/hanwei/Desktop/TNTUNet/datasets/train/', 1)
+crop2split_data("/Users/hanwei/Desktop/TNTUNet/datasets/train/")
 
 ## for training loss
 class DiceLoss(nn.Module):

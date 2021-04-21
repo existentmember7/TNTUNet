@@ -14,9 +14,16 @@ class CustomDataset(Dataset):
         self.filenames = [os.path.basename(f).split('.')[0] for f in glob.glob(self.opt.training_data_path+"color/*.png")]
 
     def encoding_label(self, labels):
-        temp_labels = np.zeros((labels.shape[0], labels.shape[1], self.opt.num_classes))
-        temp_labels[labels != 0] = [0,1]
-        temp_labels[labels == 0] = [1,0]
+        temp_labels_list = []
+        for i in range(self.opt.num_classes):
+            temp_labels_temp = np.zeros((labels.shape[0], labels.shape[1], 1))
+            temp_labels_temp[labels == i] = 1
+            temp_labels_list.append(temp_labels_temp)
+        
+        temp_labels = temp_labels_list[0]
+        for i in range(1,len(temp_labels_list)):
+            temp_labels = np.concatenate((temp_labels,temp_labels_list[i]), axis=2)
+
         return temp_labels
 
 
