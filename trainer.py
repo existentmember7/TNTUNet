@@ -70,7 +70,7 @@ def Trainer(opt, model):
 
         if (epoch_num + 1)%opt.save_interval == 0:
             save_model_path = os.path.join(opt.model_path + 'epoch_'+str(epoch_num)+'.pth')
-            torch.save(model.stat_dict(), save_model_path)
+            torch.save(model.state_dict(), save_model_path)
             logging.info("save model to {}".format(save_model_path))
     
         if epoch_num >= opt.max_epochs - 1:

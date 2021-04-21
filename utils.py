@@ -29,12 +29,20 @@ def get_masks(img_shape, labels, class_No):
 def generate_masks(path):
     img_path = path + 'color/'
     json_path = path + 'json/'
-    mask_path = path + 'label/'
+    mask_path = path + 'mask/'
     for file in glob.glob(img_path+'/*.png'):
         filename = file.split('/')[-1].split('.')[0]
         img_shape = cv2.imread(file).shape
         img = get_segmantation(img_shape, json_path+filename+'.json')
         cv2.imwrite(mask_path+filename+".png", img)
+
+def mask2label(path, label_number):
+    for img_path in glob.glob(path+'mask/*.png'):
+        filename = img_path.split('/')[-1].split('.')[0]
+        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+        img[img > 0] = label_number
+        cv2.imwrite(path+"label/"+filename+".png", img)
+
 
 def get_depth(img_path, img_shape):
     img = cv2.resize(cv2.imread(img_path), img_shape, interpolation = cv2.INTER_AREA)
@@ -43,6 +51,8 @@ def get_depth(img_path, img_shape):
     return hsv
 
 ## end
+
+mask2label('/Users/hanwei/Desktop/TNTUNet/datasets/train/', 1)
 
 ## for training loss
 class DiceLoss(nn.Module):
