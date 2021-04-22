@@ -27,7 +27,7 @@ Implementation of <a href="https://arxiv.org/abs/2103.00112">Transformer in Tran
 $ pip install -r requirements.txt
 ```
 
-## Citations
+<!-- ## Citations
 
 ```bibtex
 @misc{han2021transformer,
@@ -38,4 +38,4 @@ $ pip install -r requirements.txt
     archivePrefix = {arXiv},
     primaryClass = {cs.CV}
 }
-```
+``` -->
