@@ -67,8 +67,9 @@ def get_depth(img_path, img_shape):
 
 ## end
 
-# mask2label('/Users/hanwei/Desktop/TNTUNet/datasets/train/', 1)
-crop2split_data("/Users/hanwei/Desktop/TNTUNet/datasets/train/")
+# generate_masks('/media/han/D/aicenter_rebar_data/data/validation/')
+mask2label('/media/han/D/aicenter_rebar_data/data/validation/', 1)
+crop2split_data("/media/han/D/aicenter_rebar_data/data/validation/")
 
 ## for training loss
 class DiceLoss(nn.Module):
@@ -110,3 +111,55 @@ class DiceLoss(nn.Module):
             loss += dice * weight[i]
         return loss / self.n_classes
 ## end
+
+def IoU(pred, target, n_classes, ignore_background):
+# for mask and ground-truth label, not probability map
+    ious = []
+    iousSum = 0
+    target = decoding_label(target)
+    # pred = np.array(pred)
+    # pred = torch.from_numpy(pred)
+    pred = pred.view(-1)
+    # target = np.array(target)
+    target = torch.from_numpy(target)
+    target = target.view(-1)
+
+    ib = 0
+    if ignore_background:
+        ib = 1
+
+    # Ignore IoU for background class ("0")
+    for cls in range(ib, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
+        pred_inds = pred == cls
+        target_inds = target == cls
+        intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
+        union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - intersection
+        if union == 0:
+            ious.append(float('nan'))  # If there is no ground truth, do not include in evaluation
+        else:
+            ious.append(float(intersection) / float(max(union, 1)))
+            iousSum += float(intersection) / float(max(union, 1))
+    return iousSum/(n_classes-ib)
+
+def decoding_label(label):
+    label = label.cpu()
+    decoded_label = np.zeros((label.shape[1],label.shape[2]))
+    for c in range(label.shape[0]):
+        temp_label = label[c]
+        decoded_label[temp_label == 1] = c
+    return decoded_label
+
+def inference(model, validating_data, ignore_background, n_classes):
+    ds = validating_data.dataset
+    model.eval()
+    mIoUs = []
+    for i, (i_batch, i_label) in tqdm(enumerate(validating_data)):
+        i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
+        outputs = model(i_batch)
+        outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
+
+        for i in range(len(outputs)):
+            mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
+            mIoUs.append(mIoU)
+    mean_IoU = np.mean(np.array(mIoUs))
+    return mean_IoU

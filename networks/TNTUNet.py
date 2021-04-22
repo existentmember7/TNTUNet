@@ -264,7 +264,8 @@ class TNTUNet(nn.Module):
         image_size = 256,
         patch_size = 4,
         pixel_feature_dim=512,
-        class_num = 100
+        class_num = 100,
+        channels = 4
     ):
         super().__init__()
 
@@ -275,7 +276,7 @@ class TNTUNet(nn.Module):
             patch_size = patch_size,        # patch size
             pixel_size = 2,         # pixel size
             depth = 2,              # depth
-            pixel_feature_dim=4,
+            pixel_feature_dim=channels,
             attn_dropout = 0.1,     # attention dropout
             ff_dropout = 0.1        # feedforward dropout
         )
