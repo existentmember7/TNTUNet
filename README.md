@@ -1,3 +1,11 @@
+# TNTUnet
+
+TNTUnet is a semantic segmentation model adopting TNT model and referencing TranUnet framework.
+
+references github repos:
+1. TransUnet : https://github.com/Beckschen/TransUNet.git
+2. https://github.com/lucidrains/transformer-in-transformer.git
+
 <img src="./tnt.png" width="600px"></img>
 
 ## Transformer in Transformer
