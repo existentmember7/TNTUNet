@@ -132,6 +132,7 @@ dmypy.json
 model/*
 model/log/*
 *.pth
+.DS_Store
 
 !model/.gitkeep
 !test_result_img/.gitkeep
