@@ -129,5 +129,6 @@ dmypy.json
 .pyre/
 *.png
 *.json
+model/*
 model/log/*
 *.pth
