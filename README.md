@@ -20,6 +20,7 @@ $ pip install -r requirements.txt
 <img src="./img/depth.png" width="200px"></img>
 <img src="./img/mask.png" width="200px"></img>
 <img src="./img/pred.png" width="200px"></img>
+real || depth || mask || pred
 
 ## Transformer in Transformer
 
