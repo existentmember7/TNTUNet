@@ -6,9 +6,11 @@ references github repos:
 1. TransUnet : https://github.com/Beckschen/TransUNet.git
 2. transformer-in-transformer (TNT) : https://github.com/lucidrains/transformer-in-transformer.git
 
-<img src="./tnt.png" width="600px"></img>
+TNTUnet framework
 
 ## Transformer in Transformer
+
+<img src="./tnt.png" width="600px"></img>
 
 Implementation of <a href="https://arxiv.org/abs/2103.00112">Transformer in Transformer</a>, pixel level attention paired with patch level attention for image classification, in Pytorch.
 
