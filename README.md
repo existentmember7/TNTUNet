@@ -1,6 +1,6 @@
 # TNTUnet
 
-TNTUnet is a semantic segmentation model adopting TNT model and referencing TranUnet framework.
+TNTUnet is a semantic segmentation model adopting TNT module and referencing TranUnet framework.
 
 references github repos:
 1. TransUnet : https://github.com/Beckschen/TransUNet.git
