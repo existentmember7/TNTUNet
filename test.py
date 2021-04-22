@@ -13,27 +13,27 @@ from datasets.datasets import CustomDataset
 from option.option import Option
 from networks.TNTUNet import TNTUNet
 import cv2
-from utils import *
+# from utils import *
 
 def save_testing_result(outputs, ds, i):
     outputs = np.array(outputs[0].cpu())
     outputs[outputs!=1] = 255
     cv2.imwrite("/home/han/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', np.reshape(outputs, (outputs.shape[1], outputs.shape[2], outputs.shape[0])))
 
-# def inference(model, testing_data, ignore_background, n_classes):
-#     ds = testing_data.dataset
-#     model.eval()
-#     mIoUs = []
-#     for i, (i_batch, i_label) in tqdm(enumerate(testing_data)):
-#         i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
-#         outputs = model(i_batch)
-#         outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
-#         save_testing_result(outputs, ds, i)
-#         for i in range(len(outputs)):
-#             mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
-#             mIoUs.append(mIoU)
-#     mean_IoU = np.mean(np.array(mIoUs))
-#     return mean_IoU
+def inference(model, testing_data, ignore_background, n_classes):
+    ds = testing_data.dataset
+    model.eval()
+    mIoUs = []
+    for i, (i_batch, i_label) in tqdm(enumerate(testing_data)):
+        i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
+        outputs = model(i_batch)
+        outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
+        save_testing_result(outputs, ds, i)
+        for i in range(len(outputs)):
+            mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
+            mIoUs.append(mIoU)
+    mean_IoU = np.mean(np.array(mIoUs))
+    return mean_IoU
         
 def decoding_label(label):
     label = label.cpu()
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed(opt.seed)
 
-    testing_data = DataLoader(CustomDataset(opt), batch_size=opt.batch_size, shuffle=True)
+    testing_data = DataLoader(CustomDataset(opt), batch_size=opt.batch_size, shuffle=False)
 
     model = TNTUNet(image_size=opt.image_width, class_num=opt.num_classes).cuda()
     model.load_state_dict(torch.load(opt.model_weight_path))

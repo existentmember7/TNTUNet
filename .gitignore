@@ -136,4 +136,8 @@ model/log/*
 
 !model/.gitkeep
 !test_result_img/.gitkeep
-!tnt.png
+!img/tnt.png
+!img/real.png
+!img/depth.png
+!img/mask.png
+!img/pred.png
