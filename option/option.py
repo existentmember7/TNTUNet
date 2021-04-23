@@ -3,9 +3,9 @@ import argparse
 class Option():
     def __init__(self):
         self.parser = argparse.ArgumentParser()
-        self.parser.add_argument('--training_data_path', default='/media/han/D/aicenter_rebar_data/data/train_v2/',type=str, help="training data file path")
-        self.parser.add_argument('--testing_data_path', type=str, default="/media/han/D/aicenter_rebar_data/data/test_v2/",help="testing data file path")
-        self.parser.add_argument('--validating_data_path', type=str, default="/media/han/D/aicenter_rebar_data/data/validation_v2/",help="validating data file path")
+        self.parser.add_argument('--training_data_path', default='/media/han/D/aicenter_rebar_data/data/train_v3/',type=str, help="training data file path")
+        self.parser.add_argument('--testing_data_path', type=str, default="/media/han/D/aicenter_rebar_data/data/test_v3/",help="testing data file path")
+        self.parser.add_argument('--validating_data_path', type=str, default="/media/han/D/aicenter_rebar_data/data/validation_v3/",help="validating data file path")
         self.parser.add_argument("--image_height", type=int, default=256, help="size of image height") #720
         self.parser.add_argument("--image_width", type=int, default=256, help="size of image width") #1280
         self.parser.add_argument("--channels", type=int, default=4, help="number of image channels")
@@ -21,6 +21,6 @@ class Option():
         self.parser.add_argument("--model_weight_path", type=str, default="/home/han/Documents/han/TNTUNet/model/epoch_399.pth", help="the path of saving weights")
         self.parser.add_argument("--train", type=bool, default=None, help="true to train")
         self.parser.add_argument("--test", type=bool, default=None, help="true to test")
-        self.parser.add_argument("--continue_training", type=bool, default=True, help="whether to continue from the last checkpoint")
-        self.parser.add_argument("--ignore_background_class", type=bool, default=False, help="whether mIoU considered background class (0)")
+        self.parser.add_argument("--continue_training", type=bool, default=False, help="whether to continue from the last checkpoint")
+        self.parser.add_argument("--ignore_background_class", type=bool, default=True, help="whether mIoU considered background class (0)")
         self.opt = self.parser.parse_args()

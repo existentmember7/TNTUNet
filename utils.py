@@ -5,6 +5,7 @@ import glob
 import os
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 ## for preparing datasets
 def get_segmantation(img_shape, label_path):
@@ -57,6 +58,24 @@ def crop_and_split(img_path, size, save_path):
     cv2.imwrite(save_path+filename+'_l.png', img1)
     cv2.imwrite(save_path+filename+'_r.png', img2)
 
+def crop2split_data_3(path):
+    folders = ['color', 'depth', 'label', 'mask']
+    for folder in folders:
+        for file in glob.glob(path+folder+'/*.png'):
+            crop_and_split_3(file, (360, 360), path[:-4]+"_v3/"+folder+"/")
+
+def crop_and_split_3(img_path, size, save_path):
+    filename = img_path.split('/')[-1].split('.')[0]
+    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+    img1 = img[:size[0], :size[1]]
+    img2 = img[:size[0], size[1]:]
+    img3 = img[size[0]:, :size[1]] 
+    img4 = img[size[0]:, size[1]:]
+    cv2.imwrite(save_path+filename+'_1.png', img1)
+    cv2.imwrite(save_path+filename+'_2.png', img2)
+    cv2.imwrite(save_path+filename+'_3.png', img3)
+    cv2.imwrite(save_path+filename+'_4.png', img4)
+
 
 
 def get_depth(img_path, img_shape):
@@ -68,8 +87,8 @@ def get_depth(img_path, img_shape):
 ## end
 
 # generate_masks('/media/han/D/aicenter_rebar_data/data/validation/')
-mask2label('/media/han/D/aicenter_rebar_data/data/validation/', 1)
-crop2split_data("/media/han/D/aicenter_rebar_data/data/validation/")
+# mask2label('/media/han/D/aicenter_rebar_data/data/validation/', 1)
+crop2split_data_3("/media/han/D/aicenter_rebar_data/data/validation_v2/")
 
 ## for training loss
 class DiceLoss(nn.Module):
@@ -148,18 +167,3 @@ def decoding_label(label):
         temp_label = label[c]
         decoded_label[temp_label == 1] = c
     return decoded_label
-
-def inference(model, validating_data, ignore_background, n_classes):
-    ds = validating_data.dataset
-    model.eval()
-    mIoUs = []
-    for i, (i_batch, i_label) in tqdm(enumerate(validating_data)):
-        i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
-        outputs = model(i_batch)
-        outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
-
-        for i in range(len(outputs)):
-            mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
-            mIoUs.append(mIoU)
-    mean_IoU = np.mean(np.array(mIoUs))
-    return mean_IoU

@@ -16,29 +16,31 @@ from utils import *
 from datasets.datasets import CustomDataset
 from option.option import Option
 
-# def inference(model, validating_data, ignore_background, n_classes):
-#     ds = validating_data.dataset
-#     model.eval()
-#     mIoUs = []
-#     for i, (i_batch, i_label) in tqdm(enumerate(validating_data)):
-#         i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
-#         outputs = model(i_batch)
-#         outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
+def inference(model, validating_data, ignore_background, n_classes):
+    print("class: ", n_classes)
+    ds = validating_data.dataset
+    model.eval()
+    mIoUs = []
+    for i, (i_batch, i_label) in tqdm(enumerate(validating_data)):
+        i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
+        outputs = model(i_batch)
+        outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
 
-#         for i in range(len(outputs)):
-#             mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
-#             mIoUs.append(mIoU)
-#     mean_IoU = np.mean(np.array(mIoUs))
-#     return mean_IoU
+        for i in range(len(outputs)):
+            mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
+            mIoUs.append(mIoU)
+    mean_IoU = np.mean(np.array(mIoUs))
+    return mean_IoU
 
 def validate(model, writer, epoch_num, validating_data ,n_class, ignore_background):
-    mean_IoU = inference(model, validating_data, n_class, ignore_background)
+    mean_IoU = inference(model, validating_data, ignore_background, n_class)
     writer.add_scalar('info/val_IoU', mean_IoU, epoch_num)
     return writer
 
 def Trainer(opt, model):
     training_data = DataLoader(CustomDataset(opt), batch_size=opt.batch_size, shuffle=True)
-    validating_data = DataLoader(CustomDataset(opt, val=True), batch_size=1, shuffle=True)
+    if opt.validating_data_path != None:
+        validating_data = DataLoader(CustomDataset(opt, val=True), batch_size=1, shuffle=True)
     model.train()
 
     writer = SummaryWriter(opt.model_path + '/log')
@@ -95,7 +97,8 @@ def Trainer(opt, model):
                 labs = i_label[0, ...]#.unsqueeze(0) * 50
                 writer.add_image('train/GroundTruth', labs, iter_num)
         
-        writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class)
+        if opt.validating_data_path != None:
+            writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class)
 
         if (epoch_num + 1)%opt.save_interval == 0:
             save_model_path = os.path.join(opt.model_path + 'epoch_'+str(epoch_num+last_epoch)+'.pth')
