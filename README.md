@@ -8,24 +8,31 @@ references github repos:
 
 TNTUnet framework
 
+## Install
+
+```bash
+$ pip install -r requirements.txt
+```
+
 ## Result
 
 <img src="./img/real.png" width="200px"></img>
 <img src="./img/depth.png" width="200px"></img>
 <img src="./img/mask.png" width="200px"></img>
 <img src="./img/pred.png" width="200px"></img>
+real || depth || mask || pred
 
 ## Transformer in Transformer
 
 <img src="./img/tnt.png" width="600px"></img>
 
-Implementation of <a href="https://arxiv.org/abs/2103.00112">Transformer in Transformer</a>, pixel level attention paired with patch level attention for image classification, in Pytorch.
+The framework of <a href="https://arxiv.org/abs/2103.00112">Transformer in Transformer</a>, pixel level attention paired with patch level attention for image classification, in Pytorch.
 
-## Install
+## TransUnet
 
-```bash
-$ pip install -r requirements.txt
-```
+<img src="./img/TransUnet.png" width="600px"></img>
+
+The framework of <a href="https://arxiv.org/abs/1505.04597">TransUnet</a>, pixel level image semantic segmentation for image classification, in Pytorch.
 
 <!-- ## Citations
 

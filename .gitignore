@@ -141,3 +141,4 @@ model/log/*
 !img/depth.png
 !img/mask.png
 !img/pred.png
+!img/TransUnet.png
