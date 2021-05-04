@@ -21,6 +21,10 @@ class CustomDataset(Dataset):
                 self.data_path = self.opt.testing_data_path
         self.filenames = [os.path.basename(f).split('.')[0] for f in glob.glob(self.data_path+"color/*.png")]
 
+        self.rand_seed = 42
+        np.random.seed(self.rand_seed)
+        self.rand_seeds = np.random.randint(100, size=self.opt.max_epochs)
+
     def encoding_label(self, labels):
         temp_labels_list = []
         for i in range(self.opt.num_classes):
@@ -48,3 +52,12 @@ class CustomDataset(Dataset):
 
     def __len__(self):
         return len(self.filenames)
+
+    def rand_crop(self, img, size):
+        np.random.seed(self.rand_seeds[0])
+        buffer_h, buffer_w = h - size[0], w - size[1]
+        rand_h = np.random.randint(buffer_h, size=1)[0]
+        rand_w = np.random.randint(buffer_w, size=1)[0]
+        c, h, w = img.shape
+        img = img[rand_h:rand_h+size[0], rand_w:rand_w+size[1]]
+        return img

@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 import torch.nn.functional as F
+from einops import *
 
 ## for preparing datasets
 def get_segmantation(img_shape, label_path):
@@ -87,9 +88,12 @@ def get_depth(img_path, img_shape):
 
 ## end
 
+
 # generate_masks('/media/han/D/aicenter_rebar_data/data/validation/')
 # mask2label('/media/han/D/aicenter_rebar_data/data/validation/', 1)
-crop2split_data_3("/media/han/D/aicenter_rebar_data/data/validation_v2/")
+# crop2split_data_3("/media/han/D/aicenter_rebar_data/data/validation_v2/")
+
+
 
 ## for training loss
 class DiceLoss(nn.Module):
@@ -266,6 +270,40 @@ def decoding_label(label):
         decoded_label[temp_label == 1] = c
     return decoded_label
 
+def encoding_label(labels, num_class):
+    temp_labels_list = []
+    for i in range(num_class):
+        temp_labels_temp = np.zeros((labels.shape[0], labels.shape[1], 1))
+        temp_labels_temp[labels == i] = 1
+        temp_labels_list.append(temp_labels_temp)
+    
+    temp_labels = temp_labels_list[0]
+    for i in range(1,len(temp_labels_list)):
+        temp_labels = np.concatenate((temp_labels,temp_labels_list[i]), axis=2)
+
+    return temp_labels
+
 def learning_rate_policy(base_lr, num_iter, max_iter):
     lr = base_lr * (1.0 - num_iter/max_iter) ** 0.9
     return lr
+
+## test only mIoU
+def test_mIoU(test_result_folder_path, test_data_path):
+    IoUs = []
+    for file in glob.glob(test_result_folder_path+'*.png'):
+        filename = file.split('/')[-1].split('.')[0]
+        img_result = cv2.imread(file, cv2.IMREAD_UNCHANGED)
+        img_result[img_result>0] = 1
+        img_result = np.reshape(img_result, (1, img_result.shape[0], img_result.shape[1]))
+        img_data = cv2.imread(test_data_path+filename+'.png', cv2.IMREAD_UNCHANGED)
+        img_result = torch.from_numpy(img_result)
+        img_data = encoding_label(img_data, 2)
+        img_data = rearrange(img_data, 'h w c -> c h w')
+        img_data = torch.from_numpy(img_data)
+        iou = IoU(img_result, img_data, 2, True)
+        IoUs.append(iou)
+    mean_IoU = np.mean(np.array(IoUs))
+    print(mean_IoU)
+        
+
+# test_mIoU('/media/han/D/aicenter_rebar_data/maskrcnn_result/predictions/', '/media/han/D/aicenter_rebar_data/data/test/label/')
