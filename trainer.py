@@ -17,7 +17,7 @@ from datasets.datasets import CustomDataset
 from option.option import Option
 
 def inference(model, validating_data, ignore_background, n_classes):
-    print("class: ", n_classes)
+    # print("class: ", n_classes)
     ds = validating_data.dataset
     model.eval()
     mIoUs = []
@@ -46,11 +46,12 @@ def Trainer(opt, model):
     writer = SummaryWriter(opt.model_path + '/log')
     logging.basicConfig(filename=opt.model_path + "/log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    logging.getLogger()#.addHandler(logging.StreamHandler(sys.stdout))
     logging.info(str(opt))
 
     ce_loss = BCEWithLogitsLoss().cuda()
     dice_loss = DiceLoss(opt.num_classes).cuda()
+    focal_loss = FocalLoss().cuda()
 
     optimizer = optim.SGD(model.parameters(), lr=opt.base_lr, momentum=0.9, weight_decay=0.0001)
 
@@ -71,23 +72,32 @@ def Trainer(opt, model):
             i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
             outputs = model(i_batch)
 
-            loss_ce = ce_loss(outputs, i_label)
+            # print("outputs size: ", outputs.size())
+            # print("label size: ", i_label.size())
+            # print("label[:] size: ", i_label[:].size())
+            # exit(-1)
+
+            # loss_ce = ce_loss(outputs, i_label)
+            loss_focal = focal_loss(outputs, i_label, softmax=True)
             loss_dice = dice_loss(outputs, i_label[:], softmax=True)
-            loss = 0.5 * loss_ce + 0.5 * loss_dice
+            loss = 0.5 * loss_focal + 0.5 * loss_dice
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            lr_ = opt.base_lr *(1.0 - iter_num/max_iterations) ** 0.9
+            lr_ = learning_rate_policy(opt.base_lr, iter_num, max_iterations)
+            # lr_ = opt.base_lr *(1.0 - iter_num/max_iterations) ** 0.9
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr_
             
             iter_num += 1
 
-            logging.info('iteration %d : loss : %f, loss_ce: %f' % (iter_num, loss.item(), loss_ce.item()))
+            logging.info('iteration %d : loss : %f, loss_focal: %f' % (iter_num, loss.item(), loss_focal.item()))
             writer.add_scalar('info/lr', lr_, iter_num)
             writer.add_scalar('info/total_loss', loss, iter_num)
-            writer.add_scalar('info/loss_ce', loss_ce, iter_num)
+            # writer.add_scalar('info/loss_ce', loss_ce, iter_num)
+            writer.add_scalar('info/loss_focal', loss_focal, iter_num)
+            writer.add_scalar('info/loss_dice', loss_dice, iter_num)
 
             if iter_num % 20 == 0:
                 image = i_batch[0, 0:1,:,:]
