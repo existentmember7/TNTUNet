@@ -68,7 +68,8 @@ def Trainer(opt, model):
     logging.info("{} iterations per epoch. {} max iterations ".format(len(training_data), max_iterations))
 
     for epoch_num in iterator:
-        for i, (i_batch, i_label) in enumerate(training_data):
+        print("epoch " + str(epoch_num))
+        for i, (i_batch, i_label) in tqdm(enumerate(training_data)):
             i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
             outputs = model(i_batch)
 
@@ -101,11 +102,28 @@ def Trainer(opt, model):
 
             if iter_num % 20 == 0:
                 image = i_batch[0, 0:1,:,:]
-                writer.add_image('train/Image', image, iter_num)
+                writer.add_image('train/Image', (image*0.229+0.485)*255, iter_num)
+                
                 outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
-                writer.add_image('train/Prediction', outputs[0, ...] * 50, iter_num)
-                labs = i_label[0, ...]#.unsqueeze(0) * 50
-                writer.add_image('train/GroundTruth', labs, iter_num)
+                class_names = ["ignore", "wall", "beam", "column", "window frame", "window pane", "balcony", "slab"]
+                label_temp = i_label.clone()
+                label_temp = torch.argmax(label_temp, dim=1, keepdim=True)[0,...]
+                pred_temp = outputs[0,...].clone()
+                for cn in range(len(class_names)):
+                    p_temp = torch.zeros_like(pred_temp)
+                    p_temp[pred_temp == cn] = 1
+                    p_temp[pred_temp != cn] = 0
+                    writer.add_image('train/Prediction_'+class_names[cn], p_temp * 50, iter_num)
+                    
+                    l_temp = torch.zeros_like(label_temp)
+                    # print(label_temp)
+                    l_temp[label_temp == cn] = 1
+                    l_temp[label_temp != cn] = 0
+                    writer.add_image('train/GroundTruth_'+class_names[cn], l_temp, iter_num)
+
+                # writer.add_image('train/Prediction', outputs[0, ...] * 50, iter_num)
+                # labs = i_label[0, ...]#.unsqueeze(0) * 50
+                # writer.add_image('train/GroundTruth', labs, iter_num)
         
         if opt.validating_data_path != None:
             writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class)
