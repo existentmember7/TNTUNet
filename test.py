@@ -18,7 +18,7 @@ import cv2
 def save_testing_result(outputs, ds, i):
     outputs = np.array(outputs[0].cpu())
     outputs[outputs!=1] = 255
-    cv2.imwrite("/home/han/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', np.reshape(outputs, (outputs.shape[1], outputs.shape[2], outputs.shape[0])))
+    cv2.imwrite("/home/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', np.reshape(outputs, (outputs.shape[1], outputs.shape[2], outputs.shape[0])))
 
 def inference(model, testing_data, ignore_background, n_classes):
     ds = testing_data.dataset

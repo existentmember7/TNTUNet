@@ -21,8 +21,9 @@ def inference(model, validating_data, ignore_background, n_classes):
     ds = validating_data.dataset
     model.eval()
     mIoUs = []
+    device = torch.device("cuda:1")
     for i, (i_batch, i_label) in tqdm(enumerate(validating_data)):
-        i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
+        i_batch, i_label = i_batch.cuda().to(device), i_label.type(torch.FloatTensor).cuda().to(device)
         outputs = model(i_batch)
         outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
 
@@ -43,8 +44,8 @@ def Trainer(opt, model):
         validating_data = DataLoader(CustomDataset(opt, val=True), batch_size=1, shuffle=True)
     model.train()
 
-    writer = SummaryWriter(opt.model_path + '/log')
-    logging.basicConfig(filename=opt.model_path + "/log.txt", level=logging.INFO,
+    writer = SummaryWriter(opt.model_path + 'log')
+    logging.basicConfig(filename=opt.model_path + "log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.getLogger()#.addHandler(logging.StreamHandler(sys.stdout))
     logging.info(str(opt))
@@ -66,11 +67,13 @@ def Trainer(opt, model):
 
     
     logging.info("{} iterations per epoch. {} max iterations ".format(len(training_data), max_iterations))
+    
+    device = torch.device("cuda:1")
 
     for epoch_num in iterator:
         print("epoch " + str(epoch_num))
         for i, (i_batch, i_label) in tqdm(enumerate(training_data)):
-            i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
+            i_batch, i_label = i_batch.cuda().to(device), i_label.type(torch.FloatTensor).cuda().to(device)
             outputs = model(i_batch)
 
             # print("outputs size: ", outputs.size())
