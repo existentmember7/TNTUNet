@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     model = TNTUNet(image_size=opt.image_width, class_num=opt.num_classes, channels=opt.channels).cuda()
 
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
     model.to(device)
 
     if opt.continue_training:

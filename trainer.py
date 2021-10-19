@@ -21,7 +21,7 @@ def inference(model, validating_data, ignore_background, n_classes):
     ds = validating_data.dataset
     model.eval()
     mIoUs = []
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
     for i, (i_batch, i_label) in tqdm(enumerate(validating_data)):
         i_batch, i_label = i_batch.cuda().to(device), i_label.type(torch.FloatTensor).cuda().to(device)
         outputs = model(i_batch)
@@ -33,9 +33,10 @@ def inference(model, validating_data, ignore_background, n_classes):
     mean_IoU = np.mean(np.array(mIoUs))
     return mean_IoU
 
-def validate(model, writer, epoch_num, validating_data ,n_class, ignore_background):
+def validate(model, writer, epoch_num, validating_data ,n_class, ignore_background, learning_log, iter, loss):
     mean_IoU = inference(model, validating_data, ignore_background, n_class)
     writer.add_scalar('info/val_IoU', mean_IoU, epoch_num)
+    learning_log.write("train,"+str(iter)+","+str(loss)+","+mean_IoU)
     return writer
 
 def Trainer(opt, model):
@@ -68,7 +69,10 @@ def Trainer(opt, model):
     
     logging.info("{} iterations per epoch. {} max iterations ".format(len(training_data), max_iterations))
     
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
+
+    learning_log = open("./model/learning_log.txt","a")
+    learning_log.writelines("type,iter,loss,acc")
 
     for epoch_num in iterator:
         print("epoch " + str(epoch_num))
@@ -129,7 +133,7 @@ def Trainer(opt, model):
                 # writer.add_image('train/GroundTruth', labs, iter_num)
         
         if opt.validating_data_path != None:
-            writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class)
+            writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class, learning_log, i, loss)
 
         if (epoch_num + 1)%opt.save_interval == 0:
             save_model_path = os.path.join(opt.model_path + 'epoch_'+str(epoch_num+last_epoch)+'.pth')
@@ -141,6 +145,7 @@ def Trainer(opt, model):
             torch.save(model.state_dict(), save_model_path)
             logging.info("save model to {}".format(save_model_path))
             iterator.close()
+            learning_log.close()
             break
     writer.close()
     return "Finish Training!"

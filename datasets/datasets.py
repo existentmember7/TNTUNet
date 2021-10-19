@@ -20,7 +20,7 @@ class CustomDataset(Dataset):
             elif self.opt.test:
                 self.data_path = self.opt.testing_data_path
         self.filenames = [os.path.basename(f).split('.')[0] for f in glob.glob(self.data_path+"color/*.png")]
-
+        print("data path:", self.data_path)
         self.rand_seed = 42
         np.random.seed(self.rand_seed)
         self.rand_seeds = np.random.randint(100, size=self.opt.max_epochs)
@@ -46,11 +46,13 @@ class CustomDataset(Dataset):
 
 
     def __getitem__(self, idx):
-        depth = get_depth(self.data_path+'depth/'+self.filenames[idx]+".png", (self.opt.image_width, self.opt.image_height))
+        #depth = get_depth(self.data_path+'depth/'+self.filenames[idx]+".png", (self.opt.image_width, self.opt.image_height))
+        #print(self.data_path+'color/'+self.filenames[idx]+'.png')
         color = cv2.resize(cv2.imread(self.data_path+'color/'+self.filenames[idx]+".png"), (self.opt.image_width, self.opt.image_height), interpolation = cv2.INTER_AREA)
         color = ((color/255)-self.mean_matrix)/self.std_matrix
         label = cv2.resize(cv2.imread(self.data_path+'label/'+self.filenames[idx]+".png", cv2.IMREAD_UNCHANGED), (self.opt.image_width, self.opt.image_height), interpolation = cv2.INTER_AREA)
-        img = np.concatenate((color, depth), axis=2)
+        # img = np.concatenate((color, depth), axis=2)
+        img = color
         img = rearrange(img, 'h w c -> c h w')
         label = self.encoding_label(label)
         label = rearrange(label, 'h w c -> c h w')

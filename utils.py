@@ -394,7 +394,7 @@ def create_dataset():
 # create_dataset()
 
 # for ics competition proj2
-base_dir = "/media/han/D/aicenter_rebar_data/ics/data_proj2_QuakeCity/"
+base_dir = "/home/user/Documents/han/data/"
 
 def get_full_file_path(filename, folder):
     file = base_dir + folder + filename
@@ -403,40 +403,167 @@ def get_full_file_path(filename, folder):
 def get_all_correct_file_path(row):
     file_list = []
     # folder_list = ["image/","label/component/","label/crack/","label/spall/","label/rebar/","label/ds/","label/depth/"]
-    folder_list = ["image/","label/component/","label/depth/"]
+    # folder_list = ["image/","label/component/","label/depth/"]
+    folder_list = ["image/","label/component/","label/crack/","label/spall/","label/rebar/","label/depth/"]
     for folder in folder_list:
         file_list.append(get_full_file_path(row[0], folder))
     return file_list
 
-def create_dataset():
+def create_dataset_all():
     # ignore, wall, beam, column, window frame, window pane, balcony, slab
-    class_list = [[70,70,70],[150,150,202],[100,186,198],[186,183,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]]
-    with open('/media/han/D/aicenter_rebar_data/ics/data_proj2_QuakeCity/train.csv', newline='\n') as csvfile:
+    class_list = [[[70,70,70],[150,150,202],[100,186,198],[186,183,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]],[[0,0,255]],[[203,192,255]],[[50,225,255]]]
+    # class_list = [[70,70,70],[150,150,202],[100,186,198],[183,186,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]]
+    with open('/home/user/Documents/han/data/train.csv', newline='\n') as csvfile:
         spamreader = csv.reader(csvfile)
         count = 0
         for row in tqdm(spamreader):
             file_list = get_all_correct_file_path(row)
             filename = file_list[0].split('/')[-1].split('.')[0]
             img = cv2.imread(file_list[0], cv2.IMREAD_UNCHANGED)
-            annotation = cv2.imread(file_list[1], cv2.IMREAD_UNCHANGED)
-            depth = cv2.imread(file_list[2], cv2.IMREAD_UNCHANGED)
-            label = np.zeros((img.shape[0], img.shape[1]))
-            for i in range(len(class_list)):
-                label[(annotation==class_list[i]).all(2)] = i
-            img[(annotation==class_list[0]).all(2)] = [0,0,0]
+            depth = cv2.imread(file_list[5], cv2.IMREAD_UNCHANGED)
+            label = np.zeros((img.shape[0],img.shape[1]))
+            count_label = 0
+            for j in range(1,len(file_list)-1):
+                annotation = cv2.imread(file_list[j], cv2.IMREAD_UNCHANGED)
+                for i in range(len(class_list[j-1])):
+                    label[(annotation==class_list[j-1][i]).all(2)] = count_label
+                    count_label += 1
+        
+                # img[(annotation==class_list[0]).all(2)] = [0,0,0] # Make the background bllack
 
-            if count %10 == 0:
-                crop_and_split(img,filename,(1080,1080),base_dir+"val/color/")
-                crop_and_split(depth,filename,(1080,1080),base_dir+"val/depth/")
-                crop_and_split(label,filename,(1080,1080),base_dir+"val/label/")
-            elif count %10 == 1:
-                crop_and_split(img,filename,(1080,1080),base_dir+"val/color/")
-                crop_and_split(depth,filename,(1080,1080),base_dir+"val/depth/")
-                crop_and_split(label,filename,(1080,1080),base_dir+"val/label/")
+            if count%10 == 0 or count%10 == 1:
+                crop_and_split(img,filename,(1080,1080),base_dir+"test/color/")
+                #crop_and_split(depth,filename,(1080,1080),base_dir+"test/depth/")
+                crop_and_split(label,filename,(1080,1080),base_dir+"test/label/")
+                #img[(annotation==class_list[0][0]).all(2)] == [0,0,0]
+                #crop_and_split(img,filename,(1080,1080),base_dir+"val/color/")
+                #crop_and_split(label,filename,(1080,1080),base_dir+"val/label/")
+            #elif count%10 == 1:
+            #    crop_and_split(img,filename,(1080,1080),base_dir+"val/color/")
+            #    crop_and_split(depth,filename,(1080,1080),base_dir+"val/depth/")
+            #    crop_and_split(label,filename,(1080,1080),base_dir+"val/label/")
             else:
                 crop_and_split(img,filename,(1080,1080),base_dir+"train/color/")
                 crop_and_split(depth,filename,(1080,1080),base_dir+"train/depth/")
                 crop_and_split(label,filename,(1080,1080),base_dir+"train/label/")
             count += 1
 
-# create_dataset()
+# create_dataset_all()
+
+def get_all_correct_file_path(row):
+    file_list = []
+    folder_list = ["image/","label/component/","label/depth/"]
+    for folder in folder_list:
+        file_list.append(get_full_file_path(row[0], folder))
+    return file_list
+
+def create_dataset_component():
+    # ignore, wall, beam, column, window frame, window pane, balcony, slab
+    class_list = [[70,70,70],[150,150,202],[100,186,198],[183,186,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]]
+    with open('/home/user/Documents/han/data/train.csv', newline='\n') as csvfile:
+        spamreader = csv.reader(csvfile)
+        count = 0
+        for row in tqdm(spamreader):
+            file_list = get_all_correct_file_path(row)
+            filename = file_list[0].split('/')[-1].split('.')[0]
+            img = cv2.imread(file_list[0], cv2.IMREAD_UNCHANGED)
+            #depth = cv2.imread(file_list[5], cv2.IMREAD_UNCHANGED)
+            label = np.zeros((img.shape[0],img.shape[1]))
+            annotation = cv2.imread(file_list[1], cv2.IMREAD_UNCHANGED)
+            for i in range(len(class_list)):
+                label[(annotation==class_list[i]).all(2)] = i
+        
+                # img[(annotation==class_list[0]).all(2)] = [0,0,0] # Make the background bllack
+
+            if count%10 == 0 or count%10 == 1:
+                crop_and_split(img,filename,(1080,1080),base_dir+"test/color/")
+                #crop_and_split(depth,filename,(1080,1080),base_dir+"test/depth/")
+                crop_and_split(label,filename,(1080,1080),base_dir+"test/label/")
+                img[(annotation==class_list[0]).all(2)] = [0,0,0]
+                crop_and_split(img,filename,(1080,1080),base_dir+"val/color/")
+                crop_and_split(label,filename,(1080,1080),base_dir+"val/label/")
+            #elif count%10 == 1:
+            #    crop_and_split(img,filename,(1080,1080),base_dir+"val/color/")
+            #    crop_and_split(depth,filename,(1080,1080),base_dir+"val/depth/")
+            #    crop_and_split(label,filename,(1080,1080),base_dir+"val/label/")
+            else:
+                img[(annotation==class_list[0]).all(2)] = [0,0,0]
+                crop_and_split(img,filename,(1080,1080),base_dir+"train/color/")
+                #crop_and_split(depth,filename,(1080,1080),base_dir+"train/depth/")
+                crop_and_split(label,filename,(1080,1080),base_dir+"train/label/")
+            count += 1
+
+#create_dataset_component()
+
+# for creating destroy dataset
+def get_all_correct_file_path_destroy(row):
+    file_list = []
+    # folder_list = ["image/","label/component/","label/crack/","label/spall/","label/rebar/","label/ds/","label/depth/"]
+    # folder_list = ["image/","label/component/","label/depth/"]
+    folder_list = ["image/", "label/crack/","label/spall/","label/rebar/","label/depth/"]
+    for folder in folder_list:
+        file_list.append(get_full_file_path(row[0], folder))
+    return file_list
+
+def create_destroy_dataset():
+    # ignore, crack, spall, balcony, slab
+    class_list = [[0,0,255],[203,192,255],[50,225,255]]
+    with open('/home/user/Documents/han/data/train.csv', newline='\n') as csvfile:
+        spamreader = csv.reader(csvfile)
+        count = 0
+        for row in tqdm(spamreader):
+            file_list = get_all_correct_file_path_destroy(row)
+            filename = file_list[0].split('/')[-1].split('.')[0]
+            img = cv2.imread(file_list[0], cv2.IMREAD_UNCHANGED)
+            depth = cv2.imread(file_list[4], cv2.IMREAD_UNCHANGED)
+            label = np.zeros((img.shape[0], img.shape[1]))
+
+            for i in range(1,len(file_list)-1):
+                annotation = cv2.imread(file_list[i], cv2.IMREAD_UNCHANGED)
+                label[(annotation == class_list[i-1]).all(2)] = i
+            
+            if count%10 == 0 or count%10 == 1:
+                crop_and_split(img, filename, (1080,1080), base_dir+"test/color/")
+                crop_and_split(depth, filename, (1080,1080), base_dir+"test/depth/")
+                crop_and_split(label, filename, (1080,1080), base_dir+"test/label/")
+            else:
+                crop_and_split(img, filename, (1080,1080), base_dir+"train/color/")
+                crop_and_split(depth, filename, (1080,1080), base_dir+"train/depth/")
+                crop_and_split(label, filename, (1080,1080), base_dir+"train/label/")
+            count += 1
+# create_destroy_dataset()
+# for creating destroy dataset
+def get_all_correct_file_path_slab(row):
+    file_list = []
+    folder_list = ["image/","label/component/","label/depth/"]
+    for folder in folder_list:
+        file_list.append(get_full_file_path(row[0], folder))
+    return file_list
+
+def create_slab_dataset():
+    # ignore, slab
+    class_list = [[1,134,193]]
+    with open('/home/user/Documents/han/data/train.csv', newline='\n') as csvfile:
+        spamreader = csv.reader(csvfile)
+        count = 0
+        for row in tqdm(spamreader):
+            file_list = get_all_correct_file_path_slab(row)
+            filename = file_list[0].split('/')[-1].split('.')[0]
+            img = cv2.imread(file_list[0], cv2.IMREAD_UNCHANGED)
+            depth = cv2.imread(file_list[2], cv2.IMREAD_UNCHANGED)
+            label = np.zeros((img.shape[0], img.shape[1]))
+
+            for i in range(1,len(file_list)-1):
+                annotation = cv2.imread(file_list[i], cv2.IMREAD_UNCHANGED)
+                label[(annotation == class_list[i-1]).all(2)] = i
+            
+            if count%10 == 0 or count%10 == 1:
+                crop_and_split(img, filename, (1080,1080), base_dir+"test/color/")
+                crop_and_split(depth, filename, (1080,1080), base_dir+"test/depth/")
+                crop_and_split(label, filename, (1080,1080), base_dir+"test/label/")
+            else:
+                crop_and_split(img, filename, (1080,1080), base_dir+"train/color/")
+                crop_and_split(depth, filename, (1080,1080), base_dir+"train/depth/")
+                crop_and_split(label, filename, (1080,1080), base_dir+"train/label/")
+            count += 1
+#create_slab_dataset()

@@ -13,27 +13,130 @@ from datasets.datasets import CustomDataset
 from option.option import Option
 from networks.TNTUNet import TNTUNet
 import cv2
+from sklearn.metrics import classification_report, jaccard_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import itertools
+import glob
 # from utils import *
 
 def save_testing_result(outputs, ds, i):
-    outputs = np.array(outputs[0].cpu())
-    outputs[outputs!=1] = 255
-    cv2.imwrite("/home/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', np.reshape(outputs, (outputs.shape[1], outputs.shape[2], outputs.shape[0])))
+    output = np.array(outputs[0].cpu())
+    output =  np.reshape(output, (output.shape[1], output.shape[2], output.shape[0]))
+    img = np.zeros((output.shape[0], output.shape[1], 3))
+    # class_color = [[70,70,70],[150,150,202],[100,186,198],[186,183,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193],[0,0,255],[203,192,255],[50,225,255]]
+    #class_color = [[70,70,70],[0,0,255],[203,192,255],[50,225,255]]
+    class_color = [[70,70,70],[50,255,255]]
+    for c in  range(len(class_color)):
+        for w in range(output.shape[0]):
+            for h in range(output.shape[1]):
+                #print(output.shape)
+                #print(output[w][h])
+                #exit(-1)
+                if output[w][h][0] == c:
+                    img[w][h] = class_color[c]
+                # img[output==c] = class_color[c]
+    # outputs = np.array(outputs[0].cpu())
+    # outputs[outputs!=1] = 255
+    # cv2.imwrite("/home/user/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', np.reshape(outputs, (outputs.shape[1], outputs.shape[2], outputs.shape[0])))
+    cv2.imwrite("/home/user/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', img)
+
+def show_index(test_result, test_label):
+    y_pred = test_result.flatten()
+    y_true = test_label.flatten()
+    
+    # target_names = ['ignore','wall','beam','column','window frame','window pane','balcony','slab','crack','spall','rebar']
+    # target_names = ['ignore','crack','spell','rebar']
+    target_names = ['ignore','slab']
+    print(classification_report(y_true, y_pred, target_names=target_names))
+    print ("**************************************************************")
+
+    plt.figure()
+    cnf_matrix = confusion_matrix(y_true, y_pred)
+    plot_confusion_matrix(cnf_matrix, classes=target_names,normalize=True, title="confusion matrix")
+
+    # plt.show()
+    plt.savefig("matrix.png")
+
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
 
 def inference(model, testing_data, ignore_background, n_classes):
     ds = testing_data.dataset
     model.eval()
-    mIoUs = []
+    #mIoUs = []
+
+    result = []
+    label = []
+    mask = []
+    
+    device = torch.device("cuda:1")
+
     for i, (i_batch, i_label) in tqdm(enumerate(testing_data)):
-        i_batch, i_label = i_batch.cuda(), i_label.type(torch.FloatTensor).cuda()
+        i_batch, i_label = i_batch.cuda().to(device), i_label.type(torch.FloatTensor).cuda().to(device)
         outputs = model(i_batch)
         outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
         save_testing_result(outputs, ds, i)
-        for i in range(len(outputs)):
-            mIoU = IoU(outputs[i], i_label[i], n_classes, ignore_background)
-            mIoUs.append(mIoU)
-    mean_IoU = np.mean(np.array(mIoUs))
-    return mean_IoU
+        #for j in range(len(outputs)):
+        #    mIoU = IoU(outputs[j], i_label[j], n_classes, ignore_background)
+        #    mIoUs.append(mIoU)
+    
+        if len(result) == 0:
+            result = outputs.cpu().numpy()
+            label = torch.argmax(i_label,dim=1,keepdim=True).cpu().numpy()
+        else:
+            result = np.concatenate((result, outputs.cpu().numpy()))
+            label = np.concatenate((label, torch.argmax(i_label,dim=1,keepdim=True).cpu().numpy()))
+        
+       # if len(result)>=10:
+       #     break
+
+   # mean_IoU = np.mean(np.array(mIoUs))
+    
+    result = result.reshape(result.shape[0]*result.shape[1]*result.shape[2]*result.shape[3])
+    label = label.reshape(label.shape[0]*label.shape[1]*label.shape[2]*label.shape[3])
+    result = result[label!=0]
+    label = label[label!=0]
+    
+    print("result:",result)
+    print("label:",label)
+
+    ious = jaccard_score(label, result, average='weighted')
+
+    show_index(result, label)
+
+    return ious
         
 def decoding_label(label):
     label = label.cpu()
@@ -94,10 +197,22 @@ if __name__ == "__main__":
 
     testing_data = DataLoader(CustomDataset(opt), batch_size=opt.batch_size, shuffle=False)
 
-    model = TNTUNet(image_size=opt.image_width, class_num=opt.num_classes).cuda()
+    model = TNTUNet(image_size=opt.image_width, class_num=opt.num_classes, channels=opt.channels).cuda()
     model.load_state_dict(torch.load(opt.model_weight_path))
+    
+    device = torch.device("cuda:1")
+    model.to(device)
 
     mean_IoU = inference(model, testing_data, opt.ignore_background_class, opt.num_classes)
 
     print("mean_IoU: ", mean_IoU)
     
+    #filenames = glob.glob("test_result_image")
+    #file_dict = {}
+    #count = 0
+    #while True:
+        #np.zeros((1920,1080))
+
+
+
+
