@@ -33,11 +33,17 @@ def inference(model, validating_data, ignore_background, n_classes):
     mean_IoU = np.mean(np.array(mIoUs))
     return mean_IoU
 
-def validate(model, writer, epoch_num, validating_data ,n_class, ignore_background, learning_log, iter, loss):
+def validate(model, writer, epoch_num, validating_data ,n_class, ignore_background, learning_log, loss):
     mean_IoU = inference(model, validating_data, ignore_background, n_class)
     writer.add_scalar('info/val_IoU', mean_IoU, epoch_num)
-    learning_log.write("train,"+str(iter)+","+str(loss)+","+mean_IoU)
+    learning_log = open("./model/learning_log.txt","a")
+    learning_log.writelines("val,"+str(epoch_num)+","+str(loss.item())+","+str(mean_IoU.item())+"\n")
+    learning_log.close()
     return writer
+
+def train_val(model, epoch_num, validating_data ,n_class, ignore_background, learning_log, loss):
+    mean_IoU = inference(model, validating_data, ignore_background, n_class)
+    learning_log.writelines("train,"+str(epoch_num)+","+str(loss)+","+str(mean_IoU))
 
 def Trainer(opt, model):
     training_data = DataLoader(CustomDataset(opt), batch_size=opt.batch_size, shuffle=True)
@@ -72,7 +78,8 @@ def Trainer(opt, model):
     device = torch.device("cuda:0")
 
     learning_log = open("./model/learning_log.txt","a")
-    learning_log.writelines("type,iter,loss,acc")
+    learning_log.writelines("type,iter,loss,acc\n")
+    learning_log.close()
 
     for epoch_num in iterator:
         print("epoch " + str(epoch_num))
@@ -107,33 +114,34 @@ def Trainer(opt, model):
             writer.add_scalar('info/loss_focal', loss_focal, iter_num)
             writer.add_scalar('info/loss_dice', loss_dice, iter_num)
 
-            if iter_num % 20 == 0:
-                image = i_batch[0, 0:1,:,:]
-                writer.add_image('train/Image', (image*0.229+0.485)*255, iter_num)
+        #     if iter_num % 20 == 0:
+        #         image = i_batch[0, 0:1,:,:]
+        #         writer.add_image('train/Image', (image*0.229+0.485)*255, iter_num)
                 
-                outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
-                class_names = ["ignore", "wall", "beam", "column", "window frame", "window pane", "balcony", "slab"]
-                label_temp = i_label.clone()
-                label_temp = torch.argmax(label_temp, dim=1, keepdim=True)[0,...]
-                pred_temp = outputs[0,...].clone()
-                for cn in range(len(class_names)):
-                    p_temp = torch.zeros_like(pred_temp)
-                    p_temp[pred_temp == cn] = 1
-                    p_temp[pred_temp != cn] = 0
-                    writer.add_image('train/Prediction_'+class_names[cn], p_temp * 50, iter_num)
+        #         outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
+        #         class_names = ["ignore", "wall", "beam", "column", "window frame", "window pane", "balcony", "slab"]
+        #         label_temp = i_label.clone()
+        #         label_temp = torch.argmax(label_temp, dim=1, keepdim=True)[0,...]
+        #         pred_temp = outputs[0,...].clone()
+        #         for cn in range(len(class_names)):
+        #             p_temp = torch.zeros_like(pred_temp)
+        #             p_temp[pred_temp == cn] = 1
+        #             p_temp[pred_temp != cn] = 0
+        #             writer.add_image('train/Prediction_'+class_names[cn], p_temp * 50, iter_num)
                     
-                    l_temp = torch.zeros_like(label_temp)
-                    # print(label_temp)
-                    l_temp[label_temp == cn] = 1
-                    l_temp[label_temp != cn] = 0
-                    writer.add_image('train/GroundTruth_'+class_names[cn], l_temp, iter_num)
+        #             l_temp = torch.zeros_like(label_temp)
+        #             # print(label_temp)
+        #             l_temp[label_temp == cn] = 1
+        #             l_temp[label_temp != cn] = 0
+        #             writer.add_image('train/GroundTruth_'+class_names[cn], l_temp, iter_num)
 
-                # writer.add_image('train/Prediction', outputs[0, ...] * 50, iter_num)
-                # labs = i_label[0, ...]#.unsqueeze(0) * 50
-                # writer.add_image('train/GroundTruth', labs, iter_num)
+        #         # writer.add_image('train/Prediction', outputs[0, ...] * 50, iter_num)
+        #         # labs = i_label[0, ...]#.unsqueeze(0) * 50
+        #         # writer.add_image('train/GroundTruth', labs, iter_num)
         
-        if opt.validating_data_path != None:
-            writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class, learning_log, i, loss)
+        # if opt.validating_data_path != None:
+        #     writer = validate(model, writer, epoch_num+last_epoch, validating_data, opt.num_classes, opt.ignore_background_class, learning_log, loss)
+        # train_val(model, epoch_num+last_epoch, training_data, opt.num_classes, opt.ignore_background_class, learning_log, loss)
 
         if (epoch_num + 1)%opt.save_interval == 0:
             save_model_path = os.path.join(opt.model_path + 'epoch_'+str(epoch_num+last_epoch)+'.pth')
@@ -145,7 +153,6 @@ def Trainer(opt, model):
             torch.save(model.state_dict(), save_model_path)
             logging.info("save model to {}".format(save_model_path))
             iterator.close()
-            learning_log.close()
             break
     writer.close()
     return "Finish Training!"

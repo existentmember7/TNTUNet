@@ -9,6 +9,7 @@ from tqdm import tqdm
 import torch.nn.functional as F
 from einops import *
 import csv
+from matplotlib import pyplot as plt
 
 ## for preparing datasets
 def get_segmantation(img_shape, label_path):
@@ -335,6 +336,7 @@ def crop_and_split(img, filename, size, save_path):
     
     img1 = img[:size[0], :size[1]]
     img2 = img[:size[0], img.shape[1]-size[1]:]
+
     cv2.imwrite(save_path+filename+'_l.png', img1)
     cv2.imwrite(save_path+filename+'_r.png', img2)
 
@@ -394,7 +396,7 @@ def create_dataset():
 # create_dataset()
 
 # for ics competition proj2
-base_dir = "/home/user/Documents/han/data/"
+base_dir = "/media/wisccitl/15afc964-cd4b-4320-bb71-364fba832bb1/han/data_proj2_QuakeCity/"
 
 def get_full_file_path(filename, folder):
     file = base_dir + folder + filename
@@ -415,7 +417,92 @@ def create_dataset_all():
     # class_list = [[70,70,70],[150,150,202],[100,186,198],[183,186,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]]
     with open('/home/user/Documents/han/data/train.csv', newline='\n') as csvfile:
         spamreader = csv.reader(csvfile)
-        count = 0
+        count = 0# for ics competition proj1
+base_dir = "/media/han/D/aicenter_rebar_data/ics/data_proj1_Tokaido_dataset/Tokaido_dataset/"
+
+def get_full_file_path(filename):
+    file = base_dir + filename.replace('\\','/')
+    return file
+
+def get_all_correct_file_path(row):
+    file_list = []
+    for i in range(4):
+        file_list.append(get_full_file_path(row[i][1:]))
+    for i in range(4,7):
+        file_list.append(row[i])
+    return file_list
+
+def read_csv(filename):
+    filenames = []
+    with open(filename, "r") as file:
+        for r in file.readlines():
+            filenames.append(get_all_correct_file_path(r.split('\n')[0].split(',')))
+    return filenames
+
+def crop_and_split(img, filename, size, save_path):
+    
+    img1 = img[:size[0], :size[1]]
+    img2 = img[:size[0], img.shape[1]-size[1]:]
+
+    cv2.imwrite(save_path+filename+'_l.png', img1)
+    cv2.imwrite(save_path+filename+'_r.png', img2)
+
+def create_dataset():
+    train_filenames_list = read_csv(base_dir + "files_train.csv")
+    train_structural_component_path = "train_structural_component/"
+    train_damage_path = "train_damage/"
+    test_structural_component_path = "test_structural_component/"
+    test_damage_path = "test_damage/"
+    val_structural_component_path = "val_structural_component/"
+    val_damage_path = "val_damage/"
+    image_size = (640,360)
+    count_structural_component = 0
+    count_damage = 0
+    for train_filenames in tqdm(train_filenames_list):
+        # img
+        filename = train_filenames[0].split('/')[-1].split('.')[0]
+        img = cv2.imread(train_filenames[0], cv2.IMREAD_UNCHANGED)
+        img = cv2.resize(img, image_size, interpolation = cv2.INTER_AREA)
+
+        # label
+        if train_filenames[5] == "True":
+            depth = cv2.imread(train_filenames[3], cv2.IMREAD_UNCHANGED)
+            label_bmp = cv2.imread(train_filenames[1], cv2.IMREAD_UNCHANGED)
+            if count_structural_component % 10 == 0:
+                crop_and_split(img, filename, (image_size[1],image_size[1]), base_dir + test_structural_component_path+"color/")
+                crop_and_split(depth, filename, (image_size[1],image_size[1]), base_dir + test_structural_component_path+"depth/")
+                crop_and_split(label_bmp, filename, (image_size[1],image_size[1]), base_dir + test_structural_component_path+"label/")
+            elif count_structural_component % 10 == 1:
+                crop_and_split(img, filename, (image_size[1],image_size[1]), base_dir + val_structural_component_path+"color/")
+                crop_and_split(depth, filename, (image_size[1],image_size[1]), base_dir + val_structural_component_path+"depth/")
+                crop_and_split(label_bmp, filename, (image_size[1],image_size[1]), base_dir + val_structural_component_path+"label/")
+            else:
+                crop_and_split(img, filename, (image_size[1],image_size[1]), base_dir + train_structural_component_path+"color/")
+                crop_and_split(depth, filename, (image_size[1],image_size[1]), base_dir + train_structural_component_path+"depth/")
+                crop_and_split(label_bmp, filename, (image_size[1],image_size[1]), base_dir + train_structural_component_path+"label/")
+            count_structural_component += 1
+
+        # label
+        if train_filenames[6] == "True":
+            label_bmp = cv2.imread(train_filenames[2], cv2.IMREAD_UNCHANGED)
+            depth = cv2.imread(train_filenames[3], cv2.IMREAD_UNCHANGED)
+            if count_damage % 10 == 0:
+                crop_and_split(img, filename, (image_size[1],image_size[1]), base_dir + test_damage_path+"color/")
+                crop_and_split(depth, filename, (image_size[1],image_size[1]), base_dir + test_damage_path+"depth/")
+                crop_and_split(label_bmp, filename, (image_size[1],image_size[1]), base_dir + test_damage_path+"label/")
+            elif count_damage % 10 == 1:
+                crop_and_split(img, filename, (image_size[1],image_size[1]), base_dir + val_damage_path+"color/")
+                crop_and_split(depth, filename, (image_size[1],image_size[1]), base_dir + val_damage_path+"depth/")
+                crop_and_split(label_bmp, filename, (image_size[1],image_size[1]), base_dir + val_damage_path+"label/")
+            else:
+                crop_and_split(img, filename, (image_size[1],image_size[1]), base_dir + train_damage_path+"color/")
+                crop_and_split(depth, filename, (image_size[1],image_size[1]), base_dir + train_damage_path+"depth/")
+                crop_and_split(label_bmp, filename, (image_size[1],image_size[1]), base_dir + train_damage_path+"label/")
+            count_damage += 1
+
+# create_dataset()
+
+# for ics competition proj
         for row in tqdm(spamreader):
             file_list = get_all_correct_file_path(row)
             filename = file_list[0].split('/')[-1].split('.')[0]
@@ -460,13 +547,14 @@ def get_all_correct_file_path(row):
 def create_dataset_component():
     # ignore, wall, beam, column, window frame, window pane, balcony, slab
     class_list = [[70,70,70],[150,150,202],[100,186,198],[183,186,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]]
-    with open('/home/user/Documents/han/data/train.csv', newline='\n') as csvfile:
+    with open('/media/wisccitl/15afc964-cd4b-4320-bb71-364fba832bb1/han/data_proj2_QuakeCity/train.csv', newline='\n') as csvfile:
         spamreader = csv.reader(csvfile)
         count = 0
         for row in tqdm(spamreader):
             file_list = get_all_correct_file_path(row)
             filename = file_list[0].split('/')[-1].split('.')[0]
             img = cv2.imread(file_list[0], cv2.IMREAD_UNCHANGED)
+
             #depth = cv2.imread(file_list[5], cv2.IMREAD_UNCHANGED)
             label = np.zeros((img.shape[0],img.shape[1]))
             annotation = cv2.imread(file_list[1], cv2.IMREAD_UNCHANGED)
@@ -493,7 +581,7 @@ def create_dataset_component():
                 crop_and_split(label,filename,(1080,1080),base_dir+"train/label/")
             count += 1
 
-#create_dataset_component()
+# create_dataset_component()
 
 # for creating destroy dataset
 def get_all_correct_file_path_destroy(row):

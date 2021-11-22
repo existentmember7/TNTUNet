@@ -20,7 +20,8 @@ class CustomDataset(Dataset):
             elif self.opt.test:
                 self.data_path = self.opt.testing_data_path
         self.filenames = [os.path.basename(f).split('.')[0] for f in glob.glob(self.data_path+"color/*.png")]
-        print("data path:", self.data_path)
+        print("data path: ", self.data_path)
+        print("data length: ", len(self.filenames))
         self.rand_seed = 42
         np.random.seed(self.rand_seed)
         self.rand_seeds = np.random.randint(100, size=self.opt.max_epochs)
@@ -35,7 +36,7 @@ class CustomDataset(Dataset):
         temp_labels_list = []
         for i in range(self.opt.num_classes):
             temp_labels_temp = np.zeros((labels.shape[0], labels.shape[1], 1))
-            temp_labels_temp[labels == i] = 1
+            temp_labels_temp[np.sum(labels, axis=2) == i] = 1
             temp_labels_list.append(temp_labels_temp)
         
         temp_labels = temp_labels_list[0]
