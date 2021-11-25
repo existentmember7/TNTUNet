@@ -3,9 +3,9 @@ import argparse
 class Option():
     def __init__(self):
         self.parser = argparse.ArgumentParser()
-        self.parser.add_argument('--training_data_path', default="/media/wisccitl/15afc964-cd4b-4320-bb71-364fba832bb1/han/itann_final_project/dataset/train/",type=str, help="training data file path")
-        self.parser.add_argument('--testing_data_path', type=str, default="/media/wisccitl/15afc964-cd4b-4320-bb71-364fba832bb1/han/itann_final_project/dataset/val/",help="testing data file path")
-        self.parser.add_argument('--validating_data_path', type=str, default="/media/wisccitl/15afc964-cd4b-4320-bb71-364fba832bb1/han/itann_final_project/dataset/val/",help="validating data file path")
+        self.parser.add_argument('--training_data_path', default='D:\han\itann\dataset\train',type=str, help="training data file path")
+        self.parser.add_argument('--testing_data_path', type=str, default="D:\han\itann\dataset\val",help="testing data file path")
+        self.parser.add_argument('--validating_data_path', type=str, default="D:\han\itann\dataset\val",help="validating data file path")
         self.parser.add_argument("--image_height", type=int, default=256, help="size of image height") #720
         self.parser.add_argument("--image_width", type=int, default=256, help="size of image width") #1280
         self.parser.add_argument("--channels", type=int, default=3, help="number of image channels")

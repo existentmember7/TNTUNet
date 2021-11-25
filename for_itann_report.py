@@ -5,7 +5,6 @@ import glob
 
 prediction_path = '/home/wisccitl/Documents/han/TNTUNet/test_result_img/'
 data_path = '/media/wisccitl/15afc964-cd4b-4320-bb71-364fba832bb1/han/itann_final_project/dataset/val/'
-filename = '104283.png'
 
 def result(filename):
     background = cv2.imread(os.path.join(data_path, 'color',filename))
