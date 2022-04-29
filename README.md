@@ -15,7 +15,7 @@ $ pip install -r requirements.txt
 ```
 
 ## Result
-
+./img/CS766_project.avi
 <!-- <img src="./img/real.png" width="200px"></img>
 <img src="./img/depth.png" width="200px"></img>
 <img src="./img/mask.png" width="200px"></img>
