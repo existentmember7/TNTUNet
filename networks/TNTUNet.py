@@ -8,6 +8,7 @@ import numpy as np
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+
 class Decoder(nn.Module):
     def __init__(
             self,

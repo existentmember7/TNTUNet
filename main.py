@@ -140,3 +140,4 @@ imgs = read_data('./data/test.png')
 tntunet = TNTUNet()
 out = tntunet(imgs)
 print(out.shape)
+
