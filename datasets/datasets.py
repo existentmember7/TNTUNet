@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import cv2
 import glob
 import os
-from utils import *
+from backup_script.utils import *
 import numpy as np
 from einops import *
 
@@ -22,16 +22,15 @@ class CustomDataset(Dataset):
         self.filenames = [os.path.basename(f).split('.')[0] for f in glob.glob(os.path.join(self.data_path,"color","*.png"))]
         print("data path: ", self.data_path)
         print("data length: ", len(self.filenames))
-        exit(-1)
-        self.rand_seed = 42
-        np.random.seed(self.rand_seed)
-        self.rand_seeds = np.random.randint(100, size=self.opt.max_epochs)
-        self.mean_matrix = np.zeros((self.opt.image_width, self.opt.image_height,3))
-        self.std_matrix = np.zeros((self.opt.image_width, self.opt.image_height,3))
-        for i in range(len(self.mean_matrix)):
-            for j in range(len(self.mean_matrix[0])):
-                self.mean_matrix[i,j,:] = [0.485, 0.456, 0.406]
-                self.std_matrix[i,j,:] = [0.229, 0.224, 0.225]
+        # self.rand_seed = 42
+        # np.random.seed(self.rand_seed)
+        # self.rand_seeds = np.random.randint(100, size=self.opt.max_epochs)
+        # self.mean_matrix = np.zeros((self.opt.image_width, self.opt.image_height,3))
+        # self.std_matrix = np.zeros((self.opt.image_width, self.opt.image_height,3))
+        # for i in range(len(self.mean_matrix)):
+        #     for j in range(len(self.mean_matrix[0])):
+        #         self.mean_matrix[i,j,:] = [0.485, 0.456, 0.406]
+        #         self.std_matrix[i,j,:] = [0.229, 0.224, 0.225]
 
     def encoding_label(self, labels):
         temp_labels_list = []
@@ -51,7 +50,7 @@ class CustomDataset(Dataset):
         #depth = get_depth(self.data_path+'depth/'+self.filenames[idx]+".png", (self.opt.image_width, self.opt.image_height))
         #print(self.data_path+'color/'+self.filenames[idx]+'.png')
         color = cv2.resize(cv2.imread(os.path.join(self.data_path,'color',self.filenames[idx]+".png")), (self.opt.image_width, self.opt.image_height), interpolation = cv2.INTER_AREA)
-        color = ((color/255)-self.mean_matrix)/self.std_matrix
+        # color = ((color/255)-self.mean_matrix)/self.std_matrix
         label = cv2.resize(cv2.imread(os.path.join(self.data_path,'label',self.filenames[idx]+".png"), cv2.IMREAD_UNCHANGED), (self.opt.image_width, self.opt.image_height), interpolation = cv2.INTER_AREA)
         # img = np.concatenate((color, depth), axis=2)
         img = color

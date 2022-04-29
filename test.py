@@ -19,69 +19,41 @@ from sklearn.metrics import confusion_matrix
 import itertools
 import glob
 import copy
-# from utils import *
+from utils import *
+from datetime import datetime
 
-# for icshm
-# def save_testing_result(outputs, ds, i):
-#     output = np.array(outputs[0].cpu())
-#     output =  np.reshape(output, (output.shape[1], output.shape[2], output.shape[0]))
-#     img = np.zeros((output.shape[0], output.shape[1], 3))
-#     # class_color = [[70,70,70],[150,150,202],[100,186,198],[186,183,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193],[0,0,255],[203,192,255],[50,225,255]]
-#     # class_color = [[70,70,70],[0,0,255],[203,192,255],[50,225,255]]
-#     # class_color = [[70,70,70],[50,255,255]]
-#     class_color = [[70,70,70],[150,150,202],[100,186,198],[186,183,167],[133,255,255],[206,192,192],[160,80,32],[1,134,193]]
-#     for c in  range(len(class_color)):
-#         for w in range(output.shape[0]):
-#             for h in range(output.shape[1]):
-#                 #print(output.shape)
-#                 #print(output[w][h])
-#                 #exit(-1)
-#                 if output[w][h][0] == c:
-#                     img[w][h] = class_color[c]
-#                 # img[output==c] = class_color[c]
-#     # outputs = np.array(outputs[0].cpu())
-#     # outputs[outputs!=1] = 255
-#     # cv2.imwrite("/home/user/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', np.reshape(outputs, (outputs.shape[1], outputs.shape[2], outputs.shape[0])))
-#     cv2.imwrite("/home/wisccitl/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', img)
-
-def save_testing_result(outputs, ds, i):
-    output = np.array(outputs[0].cpu())
-    output =  np.reshape(output, (output.shape[1], output.shape[2]))
-
-    temp_index_1 = output>255
-    temp_index_2 = output<=255
-    img =np.zeros((output.shape[0], output.shape[1], 3))
-    img[:,:,0][temp_index_1] = 255
-    img[:,:,1][temp_index_1] = output[temp_index_1]%255
-    img[:,:,0][temp_index_2] = output[temp_index_2]
-
-    cv2.imwrite("/home/wisccitl/Documents/han/TNTUNet/test_result_img/"+ds.filenames[i]+'.png', img)
-
-def show_index(test_result, test_label):
+def show_index(test_result, test_label, opt):
     y_pred = test_result.flatten()
     y_true = test_label.flatten()
-    
-    # target_names = ['ignore','wall','beam','column','window frame','window pane','balcony','slab','crack','spall','rebar']
-    # target_names = ['ignore','crack','spell','rebar']
-    # target_names = ['ignore','slab']
-    # target_names = ['wall','beam','column','window frame','window pane','balcony','slab']
 
     # for itann term project
-    target_names = []
-    for i in range(271):
-        target_names.append(str(i))
+    # target_names = []
+    # for i in range(11):
+    #     target_names.append(str(i))
     
-
-    # y_pred[y_pred == 0] = 3
+    # for CS766
+    _mask_labels = {0: 'Sky', 1: 'Building', 2: 'Road', 3: 'Sidewalk',
+                4: 'Fence', 5: 'grass', 6: 'Pole', 7: 'Car',
+                8: 'Sign', 9: 'People', 10: 'Cyclist', 11: 'void'}
+    # class_list = [0,1,2,3,5,7]
+    class_list = [4,6,8,9,10,11]
+    target_names = []
+    for key in class_list:
+        target_names.append(_mask_labels[key])
+    # for key in _mask_labels:
+    #     target_names.append(_mask_labels[key])
+    # target_names.pop()
+    
     print(classification_report(y_true, y_pred, target_names=target_names))
     print ("**************************************************************")
 
     plt.figure()
     cnf_matrix = confusion_matrix(y_true, y_pred)
-    plot_confusion_matrix(cnf_matrix, classes=target_names,normalize=True, title="confusion matrix")
+
+    plot_confusion_matrix(cnf_matrix, classes=target_names, normalize=True, title="confusion matrix")
 
     # plt.show()
-    plt.savefig("matrix.png")
+    plt.savefig(osp.join(opt.results_save_path,"matrix.png"))
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -98,34 +70,46 @@ def plot_confusion_matrix(cm, classes,
         print('Confusion matrix, without normalization')
 
     print(cm)
+    cm = np.rint(np.array(cm)*100)
 
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    fig = plt.figure(figsize=(10,10), dpi=800)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
+    # plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    # # fig = plt.figure(figsize=(10,10), dpi=800)
+    # plt.title(title)
+    # plt.colorbar()
+    # tick_marks = np.arange(len(classes))
+    # plt.xticks(tick_marks, classes, rotation=45)
+    # plt.yticks(tick_marks, classes)
 
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    # for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-    #     plt.text(j, i, format(cm[i, j], fmt),
-    #              horizontalalignment="center",
-    #              color="white" if cm[i, j] > thresh else "black")
+    # fmt = '.2f' if normalize else 'd'
+    # thresh = cm.max() / 2.
 
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.tight_layout()
+    # plt.ylabel('True label')
+    # plt.xlabel('Predicted label')
+    # plt.tight_layout()
+    import seaborn as sns
+    ax = sns.heatmap(cm, annot=True, cmap='Blues', annot_kws={"size":8})
 
-def inference(model, testing_data, ignore_background, n_classes):
+    ax.set_title(title)
+    ax.set_xlabel('Predicted Values')
+    ax.set_ylabel('Actual Values ')
+
+    ## Ticket labels - List must be in alphabetical order
+    ax.xaxis.set_ticklabels(classes, rotation=30)
+    ax.yaxis.set_ticklabels(classes, rotation=30)
+
+def inference(model, testing_data, opt):
+
+    now = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+    os.mkdir(osp.join(opt.results_save_path, now))
+    opt.results_save_path = osp.join(opt.results_save_path, now)
+
     ds = testing_data.dataset
     model.eval()
-    # mIoUs = []
 
     result = []
     label = []
-    mask = []
+
+    RGB_list = generate_colors(opt.num_classes)
     
     device = torch.device("cuda:0")
 
@@ -133,10 +117,7 @@ def inference(model, testing_data, ignore_background, n_classes):
         i_batch, i_label = i_batch.cuda().to(device), i_label.type(torch.FloatTensor).cuda().to(device)
         outputs = model(i_batch)
         outputs = torch.argmax(torch.softmax(outputs, dim=1), dim=1, keepdim=True)
-        # save_testing_result(outputs, ds, i)
-        # for j in range(len(outputs)):
-        #     mIoU = IoU(outputs[j], i_label[j], n_classes, ignore_background)
-        #     mIoUs.append(mIoU)
+        save_image_results(outputs, ds, i, RGB_list)
     
         if len(result) == 0:
             result = outputs.cpu().numpy()
@@ -144,26 +125,21 @@ def inference(model, testing_data, ignore_background, n_classes):
         else:
             result = np.concatenate((result, outputs.cpu().numpy()))
             label = np.concatenate((label, torch.argmax(i_label,dim=1,keepdim=True).cpu().numpy()))
-        
-       # if len(result)>=10:
-       #     break
-
-    # mean_IoU = np.mean(np.array(mIoUs))
     
     result = result.reshape(result.shape[0]*result.shape[1]*result.shape[2]*result.shape[3])
     label = label.reshape(label.shape[0]*label.shape[1]*label.shape[2]*label.shape[3])
-    result = result[label!=0]
-    label = label[label!=0]
     
     print("result:",result)
     print("label:",label)
 
     ious = jaccard_score(label, result, average='weighted')
 
-    show_index(result, label)
+    combine_image(opt)
+    
+    show_index(result, label, opt)
 
     return ious
-        
+      
 def decoding_label(label):
     label = label.cpu()
     decoded_label = np.zeros((label.shape[1],label.shape[2]))
@@ -172,38 +148,57 @@ def decoding_label(label):
         decoded_label[temp_label == 1] = c
     return decoded_label
 
-
-def IoU(pred, target, n_classes, ignore_background):
-# for mask and ground-truth label, not probability map
-    ious = []
-    iousSum = 0
-    target = decoding_label(target)
-    # pred = np.array(pred)
-    # pred = torch.from_numpy(pred)
-    pred = pred.view(-1)
-    # target = np.array(target)
-    target = torch.from_numpy(target)
-    target = target.view(-1)
-
-    ib = 0
-    if ignore_background:
-        ib = 1
-
-    # Ignore IoU for background class ("0")
-    for cls in range(ib, n_classes):  # This goes from 1:n_classes-1 -> class "0" is ignored
-        pred_inds = pred == cls
-        target_inds = target == cls
-        intersection = (pred_inds[target_inds]).long().sum().data.cpu().item()  # Cast to long to prevent overflows
-        union = pred_inds.long().sum().data.cpu().item() + target_inds.long().sum().data.cpu().item() - intersection
-        if union == 0:
-            ious.append(float('nan'))  # If there is no ground truth, do not include in evaluation
-        else:
-            ious.append(float(intersection) / float(max(union, 1)))
-            iousSum += float(intersection) / float(max(union, 1))
-    return iousSum/(n_classes-ib)
-
+def save_image_results(output, ds, i,class_color):
+    c,c,w,h = output.shape
+    img = np.zeros((w,h,3))
+    output = output[0,...].clone().cpu()
+    output = output.reshape((h, w))
+    for j in range(class_color.shape[0]):
+        img[output == j, 0] = class_color[j,0]
+        img[output == j, 1] = class_color[j,1]
+        img[output == j, 2] = class_color[j,2]
     
+    cv2.imwrite(osp.join(opt.results_save_path, ds.filenames[i]+'.png'), img)
 
+def generate_colors(class_num):
+    RGB_list = []
+
+    for i in range(class_num):
+        R = np.random.randint(255)
+        G = np.random.randint(255)
+        B = np.random.randint(255)
+        RGB_list.append([R,G,B])
+
+    RGB_list = np.array(RGB_list)
+
+    return RGB_list
+
+def combine_image(opt):
+    filenames = glob.glob(osp.join(opt.results_save_path, "*.png"))
+    file_dict = []
+    for count in tqdm(range(len(filenames))):
+        filename = filenames[count].split('\\')[-1].split('_')[-1]
+        # print(filename)
+        if filename not in file_dict:
+            img = np.zeros((376,1241,3))
+            fileset = glob.glob(osp.join(opt.results_save_path, "*_"+filename))
+            fileset = sorted(fileset)
+            img_1 = cv2.imread(fileset[0])
+            img_2 = cv2.imread(fileset[1])
+            img_3 = cv2.imread(fileset[2])
+            img_4 = cv2.imread(fileset[3])
+            img_1 = cv2.resize(img_1, (376, 376), interpolation = cv2.INTER_AREA)
+            img_2 = cv2.resize(img_2,(376, 376), interpolation = cv2.INTER_AREA)
+            img_3 = cv2.resize(img_3, (376, 376), interpolation = cv2.INTER_AREA)
+            img_4 = cv2.resize(img_4,(376, 376), interpolation = cv2.INTER_AREA)
+            img[:,:376] = img_1
+            img[:,376:376*2] = img_3
+            img[:,-376*2:-376] = img_4
+            img[:,-376:] = img_2
+            cv2.imwrite(osp.join(opt.results_save_path, filename+".png"), img)
+        
+        file_dict.append(filename)
+        os.remove(filenames[count])
 
 if __name__ == "__main__":
     opt = Option().opt
@@ -221,6 +216,7 @@ if __name__ == "__main__":
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed(opt.seed)
 
+    opt.testing_data_path = crop2square(opt.testing_data_path)
     testing_data = DataLoader(CustomDataset(opt), batch_size=opt.batch_size, shuffle=False)
 
     model = TNTUNet(image_size=opt.image_width, class_num=opt.num_classes, channels=opt.channels).cuda()
@@ -229,15 +225,9 @@ if __name__ == "__main__":
     device = torch.device("cuda:0")
     model.to(device)
 
-    mean_IoU = inference(model, testing_data, opt.ignore_background_class, opt.num_classes)
+    mean_IoU = inference(model, testing_data, opt)
 
     print("mean_IoU: ", mean_IoU)
-    
-    #filenames = glob.glob("test_result_image")
-    #file_dict = {}
-    #count = 0
-    #while True:
-        #np.zeros((1920,1080))
 
 
 

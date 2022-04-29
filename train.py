@@ -24,8 +24,6 @@ if __name__ == "__main__":
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed(opt.seed)
 
-    
-
     model = TNTUNet(image_size=opt.image_width, class_num=opt.num_classes, channels=opt.channels).cuda()
 
     device = torch.device("cuda:0")
@@ -35,3 +33,5 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(opt.model_weight_path))
 
     trainer = Trainer(opt, model)
+
+    print(trainer)
