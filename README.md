@@ -16,11 +16,11 @@ $ pip install -r requirements.txt
 
 ## Result
 
-<img src="./img/real.png" width="200px"></img>
+<!-- <img src="./img/real.png" width="200px"></img>
 <img src="./img/depth.png" width="200px"></img>
 <img src="./img/mask.png" width="200px"></img>
 <img src="./img/pred.png" width="200px"></img>
-real || depth || mask || pred
+real || depth || mask || pred -->
 
 ## Transformer in Transformer
 
